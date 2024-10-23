@@ -5,7 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
-
+/model/tumor
 # Distribution / packaging
 .Python
 build/

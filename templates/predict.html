@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}Brain Tumor Predictor{% endblock %}
+
+{% block content %}
+<div class="predictor-container">
+    <div class="sidebar">
+      <h1 class="app-title">Brain Tumor Predictor</h1>
+      <form id="predict-form" class="stylish-form" action="/predict" method="POST" enctype="multipart/form-data">
+      <div class="input-group">
+        <input type="text" id="name" name="name" required>
+        <label for="name">Patient Name</label>
+      </div>
+      <div class="input-group">
+        <input type="number" id="age" name="age" required>
+        <label for="age">Age</label>
+      </div>
+      <div class="input-group">
+        <select id="gender" name="gender" required>
+          <option value="" disabled selected></option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+        <label for="gender">Gender</label>
+      </div>
+      <div class="input-group">
+        <input type="date" id="diagnosis_date" name="diagnosis_date" required>
+        <label for="diagnosis_date">Diagnosis Date</label>`
+      </div>
+      <div class="file-upload" id="drop-area">
+        <input type="file" id="file" name="file" accept="image/*" required>
+        <label for="file">
+          <i class="fas fa-cloud-upload-alt"></i>
+          <span>Choose or drop image</span>
+        </label>
+      </div>
+    </form>
+  </div>
+    <div class="main-content">
+        <div class="image-preview">
+        <img id="preview" src="" alt="Image preview">
+            <div class="image-info">
+                <p id="file-name">No file selected</p>
+                <p id="file-size">Size: --</p>
+            </div>
+        </div>
+    </div>
+    <div class="result-area">
+        <h2>Prediction Result</h2>
+        <div id="result-display">
+          <!-- Results will be displayed here -->
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('file');
+        const preview = document.getElementById('preview');
+        const fileName = document.getElementById('file-name');
+        const fileSize = document.getElementById('file-size');
+        const dropArea = document.getElementById('drop-area');
+        const form = document.getElementById('predict-form');
+        const resultDisplay = document.getElementById('result-display');
+    
+        function handleFile(file) {
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    fileName.textContent = file.name;
+                    fileSize.textContent = `Size: ${(file.size / 1024).toFixed(2)} KB`;
+                    checkFormCompletion();
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+    
+        function submitForm() {
+            const formData = new FormData(form);
+            resultDisplay.innerHTML = '<p>Processing... Please wait.</p>';
+            
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 400) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || 'Bad Request');
+                        });
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Check if treatment is available
+                if (data.treatment) {
+                    resultDisplay.innerHTML = `
+                        <p>Prediction: ${data.prediction}</p>
+                        <p>Confidence: ${data.confidence}%</p>
+                        <h3>Treatment Details</h3>
+                        <p><strong>Tumor Type:</strong> ${data.treatment.tumor_type}</p>
+                        <p><strong>Description:</strong> ${data.treatment.description}</p>
+                        <p><strong>Recommended Medication:</strong> ${data.treatment.recommended_medication}</p>
+                        <p><strong>Duration:</strong> ${data.treatment.duration}</p>
+                        <p><strong>Side Effects:</strong> ${data.treatment.side_effects}</p>
+                    `;
+                } else {
+                    resultDisplay.innerHTML = `
+                        <p>Prediction: ${data.prediction}</p>
+                        <p>Confidence: ${data.confidence}%</p>
+                        <p>No treatment information available.</p>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Prediction error:', error);
+                resultDisplay.innerHTML = `<p>Error: ${error.message}</p>`;
+            });
+        }
+    
+        function checkFormCompletion() {
+            const requiredFields = form.querySelectorAll('[required]');
+            const allFilled = Array.from(requiredFields).every(field => field.value.trim() !== '');
+            
+            // Automatically submit the form if all required fields are filled and a file is selected
+            if (allFilled && fileInput.files.length > 0) {
+                submitForm();
+            }
+        }
+    
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+    
+        // Add event listeners to all form inputs
+        const formInputs = form.querySelectorAll('input, select, textarea');
+        formInputs.forEach(input => {
+            input.addEventListener('change', checkFormCompletion);
+        });
+    
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+    
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+    
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+    
+        function highlight(e) {
+            dropArea.classList.add('highlight');
+        }
+    
+        function unhighlight(e) {
+            dropArea.classList.remove('highlight');
+        }
+    
+        dropArea.addEventListener('drop', handleDrop, false);
+    
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const file = dt.files[0];
+            fileInput.files = dt.files;
+            handleFile(file);
+        }
+    });
+</script>
+{% endblock %}
+
+
+{% block extra_css %}
+<style>
+    :root {
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  --background-color: #ecf0f1;
+  --text-color: #34495e;
+  --sidebar-width: 60%; /* Changed to percentage for responsiveness */
+  --result-display-height: 400px; /* Fixed height for result display */
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  /* height: 100vh; */
+  font-family: 'Roboto', sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.predictor-container {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  height: fit-content;
+  background: rgb(255, 255, 255);
+  padding: 1rem; /* Decreased padding */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+}
+
+.main-content {
+  /* flex-grow: 1; */
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  overflow: hidden;
+}
+
+.image-preview {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: 
+    linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0),
+    linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.result-area {
+  width: 100%;
+  height: var(--result-display-height);
+  background-color: rgb(199, 228, 168);
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  margin-top: 2px; /* This positions the element below with a margin of 2px */
+}
+
+
+.app-title {
+  color: var(--primary-color);
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.stylish-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  position: relative;
+}
+
+.input-group input,
+.input-group select {
+  width: 100%;
+  padding: 5px 0; /* Decreased padding */
+  font-size: 16px;
+  border: none;
+  border-bottom: 2px solid #ddd;
+  outline: none;
+  transition: border-color 0.3s;
+  background-color: transparent;
+}
+
+.input-group label {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  font-size: 16px;
+  color: #999;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.input-group input:focus,
+.input-group input:valid,
+.input-group select:focus,
+.input-group select:valid {
+  border-bottom-color: var(--primary-color);
+}
+
+.input-group input:focus + label,
+.input-group input:valid + label,
+.input-group select:focus + label,
+.input-group select:valid + label {
+  top: -20px;
+  font-size: 12px;
+  color: var(--primary-color);
+}
+
+.file-upload {
+  background-color: #f8f9fa;
+  border: 2px dashed #ddd;
+  border-radius: 4px;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.file-upload:hover {
+  border-color: var(--primary-color);
+}
+
+.file-upload input[type="file"] {
+  display: none;
+}
+
+.file-upload i {
+  font-size: 2rem;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.file-upload span {
+  color: #999;
+}
+
+.submit-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.3s ease all;
+  font-size: 16px;
+}
+
+.submit-btn:hover {
+  background-color: var(--secondary-color);
+}
+
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  overflow: hidden;
+}
+
+.image-preview {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: 
+    linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0),
+    linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+  z-index: 0;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 1rem;
+  position: relative;
+  height: 40vh; /* Fixed height for the image preview */
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 30vh;
+  object-fit: contain;
+  border-radius: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.image-info {
+  margin-top: 0.5rem;
+  text-align: center;
+  color: var(--text-color);
+  font-size: 0.8rem;
+}
+
+.result-area {
+  margin-top: 1rem;
+  flex-grow: 1;
+}
+
+#result-display {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  max-height:var(--result-display-height);
+  overflow-y: auto; 
+  transition: max-height 0.3s ease; 
+}
+</style>
+{% endblock %}
+

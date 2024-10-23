@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Brain Tumor Prediction App{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="form-container">
+        <h2>Welcome Back</h2>
+        <form method="POST" class="stylish-form">
+            <div class="input-group">
+                <input type="text" id="username" name="username" required>
+                <label for="username">Username</label>
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" name="password" required>
+                <label for="password">Password</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Log In</button>
+        </form>
+        <p class="form-footer">New user? <a href="{{ url_for('register') }}">Create an account</a></p>
+    </div>
+</div>
+{% endblock %}

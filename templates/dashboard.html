@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <header>
+        <h1>Welcome, <span class="username">{{ current_user.username }}</span></h1>
+        <p class="subtitle">NeuroVision Dashboard</p>
+    </header>
+
+    <div class="dashboard-grid">
+        <div class="left-column">
+            <div class="card quick-actions">
+                <h2>Quick Actions</h2>
+                <div class="button-group">
+                    <a href="{{ url_for('predict') }}" class="btn btn-primary">New Analysis</a>
+                    <a href="{{ url_for('predict') }}" class="btn btn-secondary">View History</a>
+                </div>
+            </div>
+            <div class="card account-info">
+                <h2>Profile</h2>
+                <p><strong>Email:</strong> {{ current_user.email }}</p>
+            </div>
+            <div class="card important-info">
+                <h2>Updates</h2>
+                <ul class="news-list">
+                    <li>New AI model update available</li>
+                    <li>Maintenance: {{ upcoming_maintenance_date }}</li>
+                    <li>Check out our latest research findings</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="center-column">
+            <div class="card prediction-stats">
+                <h2>Tumor Classification</h2>
+                <div class="chart-container">
+                    <canvas id="predictionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="right-column">
+            <div class="card accuracy-trend">
+                <h2>Accuracy Trend</h2>
+                <div class="chart-container">
+                    <canvas id="accuracyChart"></canvas>
+                </div>
+            </div>
+            <div class="card recent-activity">
+                <h2>Recent Activity</h2>
+                <ul>
+                    <li>Analysis #1092 - Glioma detected</li>
+                    <li>Analysis #1091 - No tumor detected</li>
+                    <li>Analysis #1090 - Meningioma detected</li>
+                    <li>Profile updated</li>
+                    <li>Completed monthly accuracy review</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Prediction Statistics Chart
+    var ctxPrediction = document.getElementById('predictionChart').getContext('2d');
+    var predictionChart = new Chart(ctxPrediction, {
+        type: 'doughnut',
+        data: {
+            labels: ['Glioma', 'Meningioma', 'No Tumor', 'Pituitary'],
+            datasets: [{
+                data: [30, 25, 35, 10],
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        font: { size: 12 }
+                    }
+                }
+            }
+        }
+    });
+
+    // Accuracy Trend Chart
+    var ctxAccuracy = document.getElementById('accuracyChart').getContext('2d');
+    var accuracyChart = new Chart(ctxAccuracy, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Accuracy',
+                data: [0.92, 0.94, 0.93, 0.95, 0.96, 0.97],
+                borderColor: '#4BC0C0',
+                tension: 0.4,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 0.9,
+                    max: 1,
+                    ticks: {
+                        callback: function(value) {
+                            return (value * 100).toFixed(0) + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: #f0f4f8;
+        color: #333;
+        margin: 0;
+        padding: 0;
+    }
+
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    header {
+        margin-bottom: 20px;
+    }
+
+    h1 {
+        font-size: 28px;
+        margin: 0;
+        color: #2c3e50;
+    }
+
+    .subtitle {
+        font-size: 16px;
+        color: #7f8c8d;
+        margin-top: 5px;
+    }
+
+    .username {
+        color: #3498db;
+    }
+
+    .dashboard-grid {
+        display: flex;
+        gap: 20px;
+    }
+
+    .left-column, .right-column {
+        width: 25%;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .center-column {
+        width: 50%;
+    }
+
+    .card {
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .card h2 {
+        font-size: 20px;
+        margin: 0 0 15px 0;
+        color: #2c3e50;
+    }
+
+    .btn {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        text-decoration: none;
+        font-size: 14px;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: #2ecc71;
+        color: white;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+    }
+
+    .button-group {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .chart-container {
+        height: 300px;
+        margin-top: 15px;
+    }
+
+    .news-list, .recent-activity ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .news-list li, .recent-activity li {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .account-info p {
+        margin: 5px 0;
+        font-size: 14px;
+    }
+
+    @media (max-width: 1200px) {
+        .dashboard-grid {
+            flex-direction: column;
+        }
+
+        .left-column, .center-column, .right-column {
+            width: 100%;
+        }
+
+        .chart-container {
+            height: 250px;
+        }
+    }
+</style>
+{% endblock %}
