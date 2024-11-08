@@ -21,7 +21,7 @@ from email.mime.text import MIMEText
 
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
-SENDER_EMAIL = 'abr099684@gmail.com'
+SENDER_EMAIL = 'Your email'
 SENDER_PASSWORD = 'emailPassword'
 
 def send_verification_email(recipient_email, verification_code):
