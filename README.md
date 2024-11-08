@@ -46,8 +46,47 @@ Before running the app, ensure you have the following installed:
    ```bash
    pip install -r requirements.txt
    ```
+This project requires configuring email functionality to work correctly. In the `apps` folder, specifically within the `operations.py` file on lines **24** and **25**, you must replace the placeholder values with your own **Google email** and **Google App Password**.
+
+## Instructions for Email Setup
+
+1. **Locate the file to edit**:
+   - Open the `operations.py` file located in the `apps` folder.
+   - Go to lines **24** and **25**. These lines contain placeholders for `EMAIL` and `PASSWORD`.
+
+2. **Replace placeholders**:
+   - Replace the `EMAIL` placeholder with your own Google email address.
+   - Replace the `PASSWORD` placeholder with your Google App Password.
+
+   Example:
+   ```python
+   EMAIL = "your_email@gmail.com"
+   PASSWORD = "your_app_password"
+
+   ## Creating a Google App Password
+
+To securely use your Google email in the project, you need to set up a **Google App Password**. Follow these steps:
+
+1. **Enable 2-Step Verification**:
+   - Go to your Google Account ([https://myaccount.google.com](https://myaccount.google.com)).
+   - In the **Security** section, locate and enable **2-Step Verification**. This must be set up before creating an App Password.
+
+2. **Create an App Password**:
+   - Once 2-Step Verification is enabled, return to the **Security** section.
+   - Under **Signing in to Google**, select **App Passwords**.
+   - In the **App Passwords** window:
+     - Choose **Mail** as the app.
+     - Choose **Other (Custom name)** for the device, then enter a name (e.g., "ProjectEmail").
+     - Google will generate a 16-character App Password for you.
+
+3. **Use the App Password in Your Project**:
+   - Copy the generated App Password. Use it in place of your normal password where required in your project.
+
+## Important Notes
+- **Updating App Passwords**: If you lose access to your App Password, follow the steps above to create a new one and update it in your project.
 
 ## Running the App
+- now everything is done start the flask server
 
 
 
